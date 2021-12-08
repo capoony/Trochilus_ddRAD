@@ -50,3 +50,18 @@ done
 ''' > /media/inter/mkapun/projects/Trochilus_ddRAD/shell/qsub_trimgalore.sh
 
 qsub /media/inter/mkapun/projects/Trochilus_ddRAD/shell/qsub_trimgalore.sh
+
+## move reports to new folder
+mkdir /media/inter/mkapun/projects/Trochilus_ddRAD/data/trimmed_reports
+
+mv /media/inter/mkapun/projects/Trochilus_ddRAD/data/trimmed/*.txt /media/inter/mkapun/projects/Trochilus_ddRAD/data/trimmed_reports
+
+## rename trimmed reads to match Stacks requirements
+for i in /media/inter/mkapun/projects/Trochilus_ddRAD/data/trimmed/*
+
+do
+
+  tmp=${i%_val*}
+  mv $i ${tmp}.fq.gz
+
+done
