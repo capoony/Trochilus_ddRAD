@@ -1,6 +1,6 @@
 ## trim reads
 
-mkdir /media/inter/mkapun/projects/Trochilus_ddRAD/data/trimmed
+mkdir /media/inter/mkapun/projects/Trochulus_ddRAD/data/trimmed
 
 echo '''
 
@@ -10,7 +10,7 @@ echo '''
 #PBS -N trim_galore
 
 ## Redirect output stream to this file.
-#PBS -o /media/inter/mkapun/projects/Trochilus_ddRAD/log/trimgalore.txt
+#PBS -o /media/inter/mkapun/projects/Trochulus_ddRAD/log/trimgalore.txt
 
 ## Stream Standard Output AND Standard Error to outputfile (see above)
 #PBS -j oe
@@ -24,7 +24,7 @@ source /opt/anaconda3/etc/profile.d/conda.sh
 conda activate trim-galore-0.6.2
 
 ## Go to output folder
-cd /media/inter/mkapun/projects/Trochilus_ddRAD/data/trimmed
+cd /media/inter/mkapun/projects/Trochulus_ddRAD/data/trimmed
 
 ## loop through all FASTQ pairs and trim by quality PHRED 20
 for i in ../raw/*.fq.gz
@@ -47,17 +47,17 @@ do
 
 done
 
-''' > /media/inter/mkapun/projects/Trochilus_ddRAD/shell/qsub_trimgalore.sh
+''' > /media/inter/mkapun/projects/Trochulus_ddRAD/shell/qsub_trimgalore.sh
 
-qsub /media/inter/mkapun/projects/Trochilus_ddRAD/shell/qsub_trimgalore.sh
+qsub /media/inter/mkapun/projects/Trochulus_ddRAD/shell/qsub_trimgalore.sh
 
 ## move reports to new folder
-mkdir /media/inter/mkapun/projects/Trochilus_ddRAD/data/trimmed_reports
+mkdir /media/inter/mkapun/projects/Trochulus_ddRAD/data/trimmed_reports
 
-mv /media/inter/mkapun/projects/Trochilus_ddRAD/data/trimmed/*.txt /media/inter/mkapun/projects/Trochilus_ddRAD/data/trimmed_reports
+mv /media/inter/mkapun/projects/Trochulus_ddRAD/data/trimmed/*.txt /media/inter/mkapun/projects/Trochulus_ddRAD/data/trimmed_reports
 
 ## rename trimmed reads to match Stacks requirements
-for i in /media/inter/mkapun/projects/Trochilus_ddRAD/data/trimmed/*
+for i in /media/inter/mkapun/projects/Trochulus_ddRAD/data/trimmed/*
 
 do
 
