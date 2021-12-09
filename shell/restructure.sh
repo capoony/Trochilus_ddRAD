@@ -1,5 +1,11 @@
 ###
 
+# create a symbolic link to the original command for demultiplexing as done by the company
+
+ln -s \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/data/RAD-Data_Trsp_2017/support.igatech.it/sequences-export/639-Kruckenhauser_Naturhistorisches_Museum_Wien/process_radtags_igt.txt \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/shell/process_radtags.sh
+
 # create a symbolic link to the FASTQ files in the data folder
 
 ln -s \
