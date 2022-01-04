@@ -1,2 +1,6 @@
 data/
 results/
+shell/stacks/
+shell/stacks_ingroup/
+shell/stacks_ohne/
+shell/test/

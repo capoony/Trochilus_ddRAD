@@ -50,20 +50,41 @@ do
   cp /media/inter/mkapun/projects/Trochilus_ddRAD/data/raw/$name.*.gz /media/inter/mkapun/projects/Trochilus_ddRAD/data/test_raw
 done < /media/inter/mkapun/projects/Trochilus_ddRAD/data/popmap_test_all_clades.tsv
 
-
+mkdir /media/inter/mkapun/projects/Trochilus_ddRAD/shell/stacks
 ## now test parameter space
-for m in 3 4 5 6 7
+for m in 3 5 7
 
 do
 
-  for M in 1 2 3 4 5 6 7 8
+  for M in 1 2 3 4 5 6 7 8 #20 #
 
   do
 
-    for n in 1 2 3 4 5 6 7 8
+    for n in 10 15 20 #
 
     do
 
+      echo """
+
+      #!/bin/sh
+
+      ## name of Job
+      #PBS -N stacks_${m}_${M}_${n}
+
+      ## Redirect output stream to this file.
+      #PBS -o /media/inter/mkapun/projects/Trochilus_ddRAD/results/test_stacks_${m}_${M}_${n}/log.txt
+
+      ## Stream Standard Output AND Standard Error to outputfile (see above)
+      #PBS -j oe
+
+      ## Select a maximum of 200 cores and 400gb of RAM
+      #PBS -l select=1:ncpus=50:mem=200gb
+
+      ######## load dependencies
+
+      module load NGSmapper/stacks-2.59
+
+      ######## run analyses
 
       mkdir /media/inter/mkapun/projects/Trochilus_ddRAD/results/test_stacks_${m}_${M}_${n}
 
@@ -73,22 +94,20 @@ do
       for i in /media/inter/mkapun/projects/Trochilus_ddRAD/data/test_raw/*.1*.gz
 
       do
-        j=$((++j))
+        j=\$((++j))
 
         ## extract ID of sample
-        tmp=${i##*/}
-        ID=${tmp%%.*}
-
-        echo $ID
+        tmp=\${i##*/}
+        ID=\${tmp%%.*}
 
         ustacks \
           -t gzfastq \
           -m ${m} \
           -M ${M} \
-          -f /media/inter/mkapun/projects/Trochilus_ddRAD/data/test_raw/${ID}.1.fq.gz \
+          -f /media/inter/mkapun/projects/Trochilus_ddRAD/data/test_raw/\${ID}.1.fq.gz \
           -o /media/inter/mkapun/projects/Trochilus_ddRAD/results/test_stacks_${m}_${M}_${n} \
-          -i $j \
-          --name $ID \
+          -i \${j} \
+          --name \${ID} \
           -p 2 &
 
       done
@@ -98,16 +117,23 @@ do
       cstacks -n ${n} \
         -P /media/inter/mkapun/projects/Trochilus_ddRAD/results/test_stacks_${m}_${M}_${n} \
         -M /media/inter/mkapun/projects/Trochilus_ddRAD/data/popmap_test_all_clades.tsv \
-        -p 200
+        -p 50
 
       sstacks -P /media/inter/mkapun/projects/Trochilus_ddRAD/results/test_stacks_${m}_${M}_${n} \
         -M /media/inter/mkapun/projects/Trochilus_ddRAD/data/popmap_test_all_clades.tsv \
-        -p 200
+        -p 50
 
       tsv2bam -P /media/inter/mkapun/projects/Trochilus_ddRAD/results/test_stacks_${m}_${M}_${n} \
         -M /media/inter/mkapun/projects/Trochilus_ddRAD/data/popmap_test_all_clades.tsv \
         --pe-reads-dir /media/inter/mkapun/projects/Trochilus_ddRAD/data/test_raw \
-        -t 200
+        -t 50
+
+      gstacks -P /media/inter/mkapun/projects/Trochilus_ddRAD/results/test_stacks_${m}_${M}_${n} \
+        -M /media/inter/mkapun/projects/Trochilus_ddRAD/data/popmap_test_all_clades.tsv \
+        -t 50
+      """ > /media/inter/mkapun/projects/Trochilus_ddRAD/shell/stacks/qsub_${m}_${M}_${n}.sh
+
+      qsub /media/inter/mkapun/projects/Trochilus_ddRAD/shell/stacks/qsub_${m}_${M}_${n}.sh
 
     done
 
@@ -115,35 +141,14 @@ do
 
 done
 
-# initialize a semaphore with a given number of tokens
-open_sem(){
-  mkfifo pipe-$$
-  exec 3<>pipe-$$
-  rm pipe-$$
-  local i=
-  for((;i>0;i--)); do
-    printf %s 000 >&3
-  done
-}
+### now summarize the data
 
-# run the given command asynchronously and pop/push tokens
-run_with_lock(){
-  local x
-  # this read waits until there is something to read
-  read -u 3 -n 3 x && ((0==x)) || exit $x
-  (
-    ( "$@"; )
-    # push the return code of the command to the semaphore
-    printf '%.3d' $? >&3
-  )&
-}
+mkdir /media/inter/mkapun/projects/Trochilus_ddRAD/shell/test
 
+mkdir /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary
+printf "Name\tPropCovLoci\tNoLoci\tPolymorphic\tPropPolymorphic\tAvSNPCount\tSDSNPCount\tAvSNPdensity\tSDSNPdenisty\tCummNoLoci\tCummPolymorphic\tCummPropPolymorphic\tCummAvSNPCount\tCummSDSNPCount\tCummAvSNPdensity\tCummSDSNPdenisty\n" > /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/summary_stats.txt
 
-N=50
-open_sem $N
-## now test parameter space
-
-module load NGSmapper/stacks-2.59
+printf "Name\tPropCovLoci\tPoly\tSample\tAvCov\tSDCov\n" > /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/summary_cov.txt
 
 for m in 3 4 5 6 7
 
@@ -157,44 +162,111 @@ do
 
     do
 
-      gstacks -P /media/inter/mkapun/projects/Trochilus_ddRAD/results/test_stacks_${m}_${M}_${n} \
-        -M /media/inter/mkapun/projects/Trochilus_ddRAD/data/popmap_test_all_clades.tsv \
-        -t 200
-    done
+      #echo ${m}_${M}_${n}
 
-  done
+      #echo """
 
-done
+      #!/bin/sh
 
-### now summarize the data
+      ## name of Job
+      #PBS -N summary_${m}_${M}_${n}
 
-mkdir /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary
-printf "Name\tNoLoci\tPolymorphic\tPropPolymorphic\tAvContigLen\tSDContigLen\tAvSNPCount\tSDSNPCount\tAvSNPdensity\tSDSNPdenisty\n" > /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/summary.txt
-for m in 6 7 #3 4 5 #6 7
+      ## Redirect output stream to this file.
+      #PBS -o /media/inter/mkapun/projects/Trochilus_ddRAD/shell/test/${m}_${M}_${n}_log.txt
 
-do
+      ## Stream Standard Output AND Standard Error to outputfile (see above)
+      #PBS -j oe
 
-  for M in 1 2 3 4 5 6 7 8
-
-  do
-
-    for n in 1 2 3 4 5 6 7 8
-
-    do
-
-      echo ${m}_${M}_${n}
+      ## Select a maximum of 200 cores and 400gb of RAM
+      #PBS -l select=1:ncpus=1:mem=10gb
 
       python  /media/inter/mkapun/projects/Trochilus_ddRAD/scripts/parse_catalog.calls.py \
         --input /media/inter/mkapun/projects/Trochilus_ddRAD/results/test_stacks_${m}_${M}_${n}/catalog.calls \
         --name ${m}_${M}_${n} \
-        >> /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/summary.txt
+        --output /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/summary &
+
+      #""" > /media/inter/mkapun/projects/Trochilus_ddRAD/shell/test/${m}_${M}_${n}.sh
+
+      #qsub /media/inter/mkapun/projects/Trochilus_ddRAD/shell/test/${m}_${M}_${n}.sh
     done
 
   done
 
 done
 
+mkdir /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/stat
 
+echo '''
+
+#dependencies
+library(plyr)
+library(ggplot2)
+library(tidyverse)
+library(akima)
+library(gridExtra)
+
+df <- read.table("/media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/summary_stats.txt",header=T)
+df1<-df %>%
+  #select(Name,i) %>%
+  separate(Name,c("m","M","n"),
+    sep="_",
+    convert=T)%>%
+  filter(PropCovLoci %in% c(0.5,0.75,1.0) )
+
+df1$PropCovLoci<-sub("^","Prop. samples (-R): ",df1$PropCovLoci)
+df1$m<-sub("^","Minimum stack depth (-m): ",df1$m)
+df1$n<-factor(df1$n)
+
+i="NoLoci"
+for (i in c("CummAvSNPCount"  ,"CummSDSNPCount","CummAvSNPdensity","CummSDSNPdenisty")){
+colors = c("purple","blue","cyan","green","yellow","red")
+#create plot
+Plot<-ggplot(df1, aes_string("M", "n", z = i)) +
+  stat_summary_2d(geom = "raster", bins = 30) +
+  scale_fill_gradientn(colours = colors)+
+  theme_bw()+
+  xlab("Distance allowed between stacks (-M)")+
+  guides(fill=guide_legend(title="Distance allowed\nbetween catalog loci\n(-n)"))+
+  ggtitle(i)+
+  facet_grid(PropCovLoci~m)
+
+ggsave(paste0("/media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/stat/summary_",i,".png"),width=12,height=6)
+
+Plot<-ggplot(df1, aes_string(x="M", y = i,col="n")) +
+  geom_line()+
+  theme_bw()+
+  xlab("Distance allowed between stacks (-M)")+
+  guides(col=guide_legend(title="Distance allowed\nbetween catalog loci\n(-n)"))+
+  facet_grid(PropCovLoci~m)
+
+ggsave(paste0("/media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/stat/summary_line_",i,".png"),width=12,height=6)
+
+}
+
+### Log-scale for # loci
+Plot<-ggplot(df1, aes_string("M", "n", z = "CummNoLoci")) +
+  stat_summary_2d(geom = "raster", bins = 30) +
+  scale_fill_gradientn(colours = colors, trans="log10")+
+  theme_bw()+
+  guides(fill=guide_legend(title="Distance allowed\nbetween catalog loci\n(-n)"))+
+  ggtitle("CummNoLoci")+
+  facet_grid(PropCovLoci~m)
+
+ggsave("/media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/stat/summary_CummNoLoci.png",width=12,height=6)
+
+Plot<-ggplot(df1, aes_string(x="M", y = "CummNoLoci",col="n")) +
+  geom_line()+
+  theme_bw()+
+  xlab("Distance allowed between stacks (-M)")+
+  guides(col=guide_legend(title="Distance allowed\nbetween catalog loci\n(-n)"))+
+  facet_grid(PropCovLoci~m, scales="free")
+
+ggsave("/media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/stat/summary_line_CummNoLoci.png",width=12,height=6)
+''' > /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/summary.r
+
+Rscript /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/summary.r
+
+mkdir /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/cov
 
 echo '''
 
@@ -204,24 +276,82 @@ library(tidyverse)
 library(akima)
 library(gridExtra)
 
-df <- read.table("/media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/summary.txt",header=T)
-df<-df %>%
-  #select(Name,i) %>%
-  separate(Name,c("m","M","n"),sep="_")
-i="NoLoci"
-for (i in c("NoLoci","PropPolymorphic","AvContigLen","SDContigLen","AvSNPCount"  ,"SDSNPCount","AvSNPdensity","SDSNPdenisty")){
-colors = c("blue","green","yellow","red")
-#create plot
-Plot<-ggplot(df, aes_string("M", "n", z = i)) +
-  stat_summary_2d(geom = "raster", bins = 30) +
-  scale_fill_gradientn(colours = colors)+
-  theme_bw()+
-  #theme(legend.title = element_text("Seconds/read"))+
-  ggtitle(i)+
-  facet_grid(.~m)
+df <- read.table("/media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/summary_cov.txt",header=T)
 
-ggsave(paste0("/media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/summary_",i,".png"),width=9,height=3)
+for (j in c(0.5,0.75,1.0)){
+
+  for (i in levels(as.factor(df$Sample))){
+
+    df1<-df %>%
+      #select(Name,i) %>%
+      separate(Name,c("m","M","n"),sep="_" ,
+      convert=T)%>%
+      filter(Sample==i, PropCovLoci==j)
+    df1$Poly[df1$Poly==0]<-"Monomorphic"
+    df1$Poly[df1$Poly==1]<-"Polymorphic"
+    df1$m<-sub("^","Minimum stack depth (-m): ",df1$m)
+    df1$n<-factor(df1$n)
+
+    # colors = c("purple","blue","cyan","green","yellow","red")
+    # ###
+    # Plot<-ggplot(df1, aes_string("M", "n", z = "AvCov")) +
+    #   stat_summary_2d(geom = "raster", bins = 30) +
+    #   scale_fill_gradientn(colours = colors)+
+    #   theme_bw()+
+    #   ggtitle(paste0("Average Coverage; PropCovLoci: ",j))+
+    #   guides(fill=guide_legend(title="Distance allowed\nbetween catalog loci\n(-n)"))+
+    #   facet_grid(Poly~m)
+    #
+    # ggsave(paste0("/media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/cov/cov_",i,"_",j,".png"),width=12,height=6)
+
+    Plot<-ggplot(df1, aes_string(x="M", y = "AvCov",col="n")) +
+      geom_line()+
+      theme_bw()+
+      xlab("Distance allowed between stacks (-M)")+
+      guides(col=guide_legend(title="Distance allowed\nbetween catalog loci\n(-n)"))+
+      facet_grid(Poly~m,scales="free")
+
+    ggsave(paste0("/media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/cov/cov_line_",i,"_",j,".png"),width=12,height=6)
+  }
 }
-''' > /media/inter/mkapun/projects/MinION_TestRuns/Basecalling/runtimes.r
 
-Rscript /media/inter/mkapun/projects/MinION_TestRuns/Basecalling/runtimes.r
+# df$Poly[df$Poly==0]<-"Monomorphic"
+# df$Poly[df$Poly==1]<-"Polymorphic"
+#
+#
+# df2<-spread(df, key = Poly, value = AvCov)
+# df2.sum<-df2 %>%
+#   #select(Name,i) %>%
+#   separate(Name,c("m","M","n"),sep="_" ,
+#   convert=T)%>%
+#   mutate("Monomorphic/Polymorphic"=Monomorphic/Polymorphic)
+#
+# df2.sum$n<-factor(df2.sum$n)
+# df2.sum$m<-sub("^","Minimum stack depth (-m): ",df2.sum$m)
+# df2.sum$Sample<-sub("^","Sample name: ",df2.sum$Sample)
+#
+# Plot<-ggplot(df2.sum, aes_string(x="M", y = "Monomorphic/Polymorphic",col="n")) +
+#   geom_line()+
+#   theme_bw()+
+#   xlab("Distance allowed between stacks (-M)")+
+#   guides(col=guide_legend(title="Distance allowed\nbetween catalog loci\n(-n)"))+
+#   facet_grid(Sample~m,scales="free")
+#
+# ggsave("/media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/cov/cov_diff.png",width=12,height=18)
+#
+# df2.cov<-df %>%
+#   group_by(Sample)%>%
+#   summarize(Coverage=mean(AvCov))
+#
+# Plot<-ggplot(df2.cov, aes(x=as.factor(Sample), y = Coverage)) +
+#   geom_bar(stat ="identity")+
+#   theme_bw()+
+#   xlab("Sample Name")
+#
+# ggsave("/media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/cov/cov_av.png",width=8,height=4)
+
+''' > /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/summary_cov.r
+
+Rscript /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/summary_cov.r
+
+cp -r /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary ~/winuser

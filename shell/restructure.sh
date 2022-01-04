@@ -21,3 +21,11 @@ ln -s \
 ln -s \
   /media/inter/mkapun/projects/Trochulus_ddRAD/data/RAD-Data_Trsp_2017/info/popmap_test_all_clades.tsv \
   /media/inter/mkapun/projects/Trochulus_ddRAD/data/popmap_test_all_clades.tsv
+
+ln -s \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/data/RAD-Data_Trsp_2017/info/popmap_test_ohneore.tsv \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/data/popmap_test_ohneore.tsv
+
+ln -s \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/data/RAD-Data_Trsp_2017/info/popmap_test_ingroup.tsv \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/data/popmap_test_ingroup.tsv

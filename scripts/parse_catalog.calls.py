@@ -13,6 +13,7 @@ group = OptionGroup(parser, "< put description here >")
 
 parser.add_option("--input", dest="IN", help="Input file")
 parser.add_option("--name", dest="name", help="Name")
+parser.add_option("--output", dest="OUT", help="Outputfile prefix")
 
 (options, args) = parser.parse_args()
 parser.add_option_group(group)
@@ -29,34 +30,6 @@ def load_data(x):
     else:
         y = open(x, "r", encoding="latin-1")
     return y
-
-
-D = d(lambda: d(int))
-Init = 0
-
-for l in load_data(options.IN):
-    if l.startswith("#"):
-        continue
-    a = l.rstrip().split()
-
-    if Init == 0:
-
-        chr = a[0]
-        MAX = a[1]
-        SNPs = 0
-        Init = 1
-    # print(a, MAX)
-    if a[0] != chr:
-        D[chr]["max"] = MAX
-        D[chr]["SNPs"] = SNPs
-        # print(l, MAX, a[1], SNPs, a[0], chr)
-        chr = a[0]
-        SNPs = 0
-    if a[4] != ".":
-        SNPs += 1
-    MAX = a[1]
-D[chr]["max"] = MAX
-D[chr]["SNPs"] = SNPs
 
 
 def meanstdv(x):
@@ -80,27 +53,148 @@ def meanstdv(x):
     return mean, std, se
 
 
-L = len(D.keys())
-SNPdens = []
-ContigLen = []
-SNPCount = []
-Poly = 0
-for k, v in sorted(D.items()):
+D = d(lambda: d(lambda: d(int)))
+Init = 0
 
-    ContigLen.append(int(v["max"]))
-    if v["SNPs"] != 0:
-        Poly += 1
-        SNPdens.append(v["SNPs"] / float(v["max"]))
-        SNPCount.append(v["SNPs"])
-    # print(options.name, k, v["max"], v["SNPs"], v["SNPs"] / float(v["max"]), sep="\t")
+CovFullDict = d(lambda: d(lambda: d(list)))
+X = 1
+for l in load_data(options.IN):
+    # if X % 10000000 == 0:
+    #     print(X)
+    # skip description header
+    if l.startswith("##"):
+        continue
+    # store name of samples
+    if l.startswith("#"):
+        a = l.rstrip().split()
+        header = a[9:]
+        continue
+    # split line
+    a = l.rstrip().split()
 
-print(
-    options.name,
-    L,
-    Poly,
-    round(Poly / L, 2),
-    "\t".join([str(round(x, 1)) for x in meanstdv(ContigLen)[:2]]),
-    "\t".join([str(round(x, 1)) for x in meanstdv(SNPCount)[:2]]),
-    "\t".join([str(round(x, 5)) for x in meanstdv(SNPdens)[:2]]),
-    sep="\t",
-)
+    # initiate counting at first entry
+    if Init == 0:
+        chr = a[0]
+        MAX = a[1]
+        SNPs = 0
+        Init = 1
+        CovDict = d(list)
+
+    if a[0] != chr:
+
+        # calculate what proportion of the sample are covered for a given Locus
+        CV = len(CovDict.keys()) / len(header)
+        # print(CV)
+        # store the number of SNPs per locus
+        D[round(CV, 2)][chr]["SNPs"] = SNPs
+        D[round(CV, 2)][chr]["max"] = MAX
+        if SNPs == 0:
+            Poly = 0
+        else:
+            Poly = 1
+        for h in header:
+            if h in CovDict:
+                CovFullDict[round(CV, 2)][Poly][h].append(
+                    meanstdv(CovDict[h])[0])
+
+        # reset counters
+        chr = a[0]
+        SNPs = 0
+        CovDict = d(list)
+    X += 1
+
+    MAX = a[1]
+
+    # summarize coverages
+    pops = a[9:]
+
+    # count if polymorphic
+    if a[4] != ".":
+        for i in range(len(pops)):
+            if pops[i].split(":")[0] == "./.":
+                continue
+            DS = dict(zip(a[8].split(":"), pops[i].split(":")))
+            CovDict[header[i]].append(int(DS["DP"]))
+        SNPs += 1
+    else:
+        for i in range(len(pops)):
+            if pops[i] == ".":
+                continue
+            CovDict[header[i]].append(int(pops[i]))
+
+D[round(CV, 2)][chr]["SNPs"] = SNPs
+D[round(CV, 2)][chr]["max"] = MAX
+if SNPs == 0:
+    Poly = 0
+else:
+    Poly = 1
+for h in header:
+    if h in CovDict:
+        CovFullDict[round(CV, 2)][Poly][h].append(meanstdv(CovDict[h])[0])
+
+FullDens = []
+FullCount = []
+FullLoci = 0
+FullPoly = 0
+out1 = open(options.OUT + "_stats.txt", "a")
+for R, V in sorted(D.items(), reverse=True):
+    L = len(V.keys())
+    SNPdens = []
+    SNPCount = []
+    Poly = 0
+    for k, v in sorted(V.items()):
+        # print(v)
+        if v["SNPs"] != 0:
+            Poly += 1
+            SNPdens.append(v["SNPs"] / float(v["max"]))
+            SNPCount.append(v["SNPs"])
+        # print(options.name, k, v["max"], v["SNPs"], v["SNPs"] / float(v["max"]), sep="\t")
+    FullDens.extend(SNPdens)
+    FullCount.extend(SNPCount)
+    FullLoci += L
+    FullPoly += Poly
+    FullPropPoly = round(FullPoly / FullLoci, 2)
+    out1.write(
+        "\t".join(
+            [
+                str(x)
+                for x in [
+                    options.name,
+                    R,
+                    L,
+                    Poly,
+                    round(Poly / L, 2),
+                    "\t".join([str(round(x, 1))
+                              for x in meanstdv(SNPCount)[:2]]),
+                    "\t".join([str(round(x, 5))
+                              for x in meanstdv(SNPdens)[:2]]),
+                    FullLoci,
+                    FullPoly,
+                    FullPropPoly,
+                    "\t".join([str(round(x, 1))
+                              for x in meanstdv(FullCount)[:2]]),
+                    "\t".join([str(round(x, 5))
+                              for x in meanstdv(FullDens)[:2]]),
+                ]
+            ]
+        )
+        + "\n"
+    )
+
+out2 = open(options.OUT + "_cov.txt", "a")
+
+for Prop, v in sorted(CovFullDict.items()):
+    for Poly, v1 in sorted(v.items()):
+        for h, c in sorted(v1.items()):
+            out2.write(
+                "\t".join(
+                    [
+                        options.name,
+                        str(Prop),
+                        str(Poly),
+                        h,
+                        "\t".join([str(round(x, 1)) for x in meanstdv(c)[:2]]),
+                    ]
+                )
+                + "\n"
+            )
