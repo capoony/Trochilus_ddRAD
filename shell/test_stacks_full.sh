@@ -147,7 +147,7 @@ done
 mkdir /media/inter/mkapun/projects/Trochilus_ddRAD/shell/test
 
 mkdir /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/full
-printf "Name\tPropCovLoci\tNoLoci\tPolymorphic\tPropPolymorphic\tAvSNPCount\tSDSNPCount\tAvSNPdensity\tSDSNPdenisty\tCummNoLoci\tCummPolymorphic\tCummPropPolymorphic\tCummAvSNPCount\tCummSDSNPCount\tCummAvSNPdensity\tCummSDSNPdenisty\n" > /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/full/summary_stats.txt
+printf "Name\tPropCovLoci\tNoLoci\tPolymorphic\tPropPolymorphic\tAvSNPCount\tSDSNPCount\tAvSNPdensity\tSDSNPdenisty\tAvHet\tSDHet\tCummNoLoci\tCummPolymorphic\tCummPropPolymorphic\tCummAvSNPCount\tCummSDSNPCount\tCummAvSNPdensity\tCummSDSNPdenisty\tCummAvHet\tCummSDHet\n" > /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/full/summary_stats.txt
 
 printf "Name\tPropCovLoci\tPoly\tSample\tAvCov\tSDCov\n" > /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/full/summary_cov.txt
 
@@ -182,9 +182,9 @@ do
       #PBS -l select=1:ncpus=1:mem=10gb
 
       python  /media/inter/mkapun/projects/Trochilus_ddRAD/scripts/parse_catalog.calls.py \
-        --input /media/inter/mkapun/projects/Trochilus_ddRAD/results/test_stacks_${m}_${M}_${n}/catalog.calls \
+        --input /media/inter/mkapun/projects/Trochilus_ddRAD/results/full/test_stacks_${m}_${M}_${n}/catalog.calls \
         --name ${m}_${M}_${n} \
-        --output /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/full/summary &
+        --output /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/full/summary_test &
 
       #""" > /media/inter/mkapun/projects/Trochilus_ddRAD/shell/test/${m}_${M}_${n}.sh
 
@@ -194,6 +194,40 @@ do
   done
 
 done
+
+PROCS=50       ;       WAIT=0  ;       END=0
+
+# Wait for next thread.
+function waitnext
+{       # Needs BASH/KSH
+  wait "${PIDS[$(( (WAIT++) % PROCS))]}"
+}
+
+for m in 3 4 5 6 7
+
+do
+
+  for M in 1 2 3 4 5 6 7 8 10 12 15 16 20 30
+
+  do
+
+    for n in 1 2 3 4 5 6 7 8 10 12 15 16 20 30
+
+    do
+      [ "$((END-WAIT))" -ge "$PROCS" ] && waitnext
+      python  /media/inter/mkapun/projects/Trochilus_ddRAD/scripts/parse_catalog.calls.py \
+        --input /media/inter/mkapun/projects/Trochilus_ddRAD/results/full/test_stacks_${m}_${M}_${n}/catalog.calls \
+        --name ${m}_${M}_${n} \
+        --output /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/full/summary  &
+      PIDS[$(( (END++) % PROCS ))]=$!
+    done
+  done
+done
+
+# wait for ALL remaining processes
+wait
+
+
 
 mkdir /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/full/stat
 
@@ -222,7 +256,11 @@ df1$m<-sub("^","Minimum stack depth (-m): ",df1$m)
 df1$n<-factor(df1$n)
 
 i="NoLoci"
-for (i in c("CummAvSNPCount"  ,"CummSDSNPCount","CummAvSNPdensity","CummSDSNPdenisty")){
+for (i in c("SNPCount" ,"SNPdensity","Het")){
+  AV=paste0("CummAv",i)
+  SD=paste0("CummSD",i)
+  df1$ymin=df1[[AV]]-df1[[SD]]
+  df1$ymax=df1[[AV]]+df1[[SD]]
 colors = c("purple","blue","cyan","green","yellow","red")
 #create plot
 # Plot<-ggplot(df1, aes_string("M", "n", z = i)) +
@@ -236,11 +274,13 @@ colors = c("purple","blue","cyan","green","yellow","red")
 #
 # ggsave(paste0("/media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/full/stat/summary_",i,".png"),width=12,height=6)
 
-Plot<-ggplot(df1, aes_string(x="M", y = i,col="n")) +
+Plot<-ggplot(df1, aes_string(x="M", y = AV,col="n",fill="n")) +
   geom_line()+
+  #geom_ribbon(aes(ymin=ymin,ymax=ymax),alpha=0.1,colour=NA)+
   theme_bw()+
   xlab("Distance allowed between stacks (-M)")+
   guides(col=guide_legend(title="Distance allowed\nbetween catalog loci\n(-n)"))+
+  guides(fill=guide_legend(title="Distance allowed\nbetween catalog loci\n(-n)"))+
   facet_grid(PropCovLoci~m)
 
 ggsave(paste0("/media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/full/stat/summary_line_",i,".png"),width=12,height=6)

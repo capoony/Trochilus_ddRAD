@@ -1,6 +1,8 @@
 import sys
 from collections import defaultdict as d
 from optparse import OptionParser, OptionGroup
+from rpy2.robjects import r
+import rpy2.robjects as robjects
 
 # Author: Martin Kapun
 
@@ -12,7 +14,6 @@ group = OptionGroup(parser, "< put description here >")
 #########################################################   CODE   #########################################################################
 
 parser.add_option("--input", dest="IN", help="Input file")
-parser.add_option("--name", dest="name", help="Name")
 parser.add_option("--output", dest="OUT", help="Outputfile prefix")
 
 (options, args) = parser.parse_args()
@@ -32,36 +33,15 @@ def load_data(x):
     return y
 
 
-def meanstdv(x):
-    """ calculate mean, stdev and standard error : x must be a list of numbers"""
-    from math import sqrt
-
-    x = [y for y in x if y != "na"]
-    n, mean, std, se = len(x), 0, 0, 0
-    if len(x) == 0:
-        return "na", "na", "na"
-    for a in x:
-        mean = mean + a
-    mean = mean / float(n)
-    if len(x) > 1:
-        for a in x:
-            std = std + (a - mean) ** 2
-        std = sqrt(std / float(n - 1))
-        se = std / sqrt(n)
-    else:
-        std = 0
-        se = 0
-    return mean, std, se
-
-
 D = d(lambda: d(lambda: d(int)))
 Init = 0
 
 CovFullDict = d(lambda: d(lambda: d(list)))
 X = 1
 for l in load_data(options.IN):
-    # if X % 10000000 == 0:
-    #     print(X)
+    if X % 10000000 == 0:
+        print(X)
+        # break
     # skip description header
     if l.startswith("##"):
         continue
@@ -96,16 +76,6 @@ for l in load_data(options.IN):
             D[round(CV, 2)][chr]["GT"] = sum([GT.count("0|1"), GT.count("1|0")]) / len(
                 GT
             )
-        if SNPs == 0:
-            Poly = 0
-        else:
-            Poly = 1
-
-        # store
-        for h in header:
-            if h in CovDict:
-                CovFullDict[round(CV, 2)][Poly][h].append(
-                    meanstdv(CovDict[h])[0])
 
         # reset counters
         chr = a[0]
@@ -141,20 +111,7 @@ if len(GT) == 0:
 else:
     D[round(CV, 2)][chr]["GT"] = sum(
         [GT.count("0|1"), GT.count("1|0")]) / len(GT)
-if SNPs == 0:
-    Poly = 0
-else:
-    Poly = 1
-for h in header:
-    if h in CovDict:
-        CovFullDict[round(CV, 2)][Poly][h].append(meanstdv(CovDict[h])[0])
 
-FullDens = []
-FullCount = []
-FullGT = []
-FullLoci = 0
-FullPoly = 0
-out1 = open(options.OUT + "_stats.txt", "a")
 for R, V in sorted(D.items(), reverse=True):
     L = len(V.keys())
     SNPdens = []
@@ -165,61 +122,13 @@ for R, V in sorted(D.items(), reverse=True):
         # print(v)
         if v["SNPs"] != 0:
             Poly += 1
-            SNPdens.append(v["SNPs"] / float(v["max"]))
             SNPCount.append(v["SNPs"])
             GTcount.append(v["GT"])
-        # print(options.name, k, v["max"], v["SNPs"], v["SNPs"] / float(v["max"]), sep="\t")
-    FullDens.extend(SNPdens)
-    FullCount.extend(SNPCount)
-    FullGT.extend(GTcount)
-    FullLoci += L
-    FullPoly += Poly
-    FullPropPoly = round(FullPoly / FullLoci, 2)
-    out1.write(
-        "\t".join(
-            [
-                str(x)
-                for x in [
-                    options.name,
-                    R,
-                    L,
-                    Poly,
-                    round(Poly / L, 2),
-                    "\t".join([str(round(x, 1))
-                              for x in meanstdv(SNPCount)[:2]]),
-                    "\t".join([str(round(x, 5))
-                              for x in meanstdv(SNPdens)[:2]]),
-                    "\t".join([str(round(x, 5))
-                              for x in meanstdv(GTcount)[:2]]),
-                    FullLoci,
-                    FullPoly,
-                    FullPropPoly,
-                    "\t".join([str(round(x, 1))
-                              for x in meanstdv(FullCount)[:2]]),
-                    "\t".join([str(round(x, 5))
-                              for x in meanstdv(FullDens)[:2]]),
-                    "\t".join([str(round(x, 5))
-                              for x in meanstdv(FullGT)[:2]]),
-                ]
-            ]
-        )
-        + "\n"
-    )
-
-out2 = open(options.OUT + "_cov.txt", "a")
-
-for Prop, v in sorted(CovFullDict.items()):
-    for Poly, v1 in sorted(v.items()):
-        for h, c in sorted(v1.items()):
-            out2.write(
-                "\t".join(
-                    [
-                        options.name,
-                        str(Prop),
-                        str(Poly),
-                        h,
-                        "\t".join([str(round(x, 1)) for x in meanstdv(c)[:2]]),
-                    ]
-                )
-                + "\n"
-            )
+    r.assign("SNPs", robjects.vectors.FloatVector(SNPCount))
+    r.assign("GT", robjects.vectors.FloatVector(GTcount))
+    r('library(ggplot2)')
+    r('library(gridExtra)')
+    r('SNPs.p<-ggplot()+aes(SNPs)+geom_histogram(bins=25)+theme_bw()+ggtitle("SNPcount/Locus")')
+    r('GT.p<-ggplot()+aes(GT)+geom_histogram(bins=50)+theme_bw()+ggtitle("Average Heterozygosity")')
+    r('PLOT<-grid.arrange(SNPs.p,GT.p,ncol=2)')
+    r('ggsave("' + options.OUT + "_" + str(R) + '.png",PLOT,width=12,height=6)')
