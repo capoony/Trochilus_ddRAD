@@ -30,4 +30,12 @@ We based our analysis on the commonly software Stacks, which allows to identify 
 
 -   **-M**: Distance allowed between stacks. This represents the number of nucleotides that may be different between two stacks in order to merge them. These nucleotide differences may be due to polymorphisms present between two alleles, or they may be due to sequencing error.
 
--   **-n**: Distance Between Catalog Loci. In populations there might be monomorphic, or fixed loci in two or more individuals. However, different haplotypes of the same locus could segregate in the population and the parameter -n defines by how many positions they may differ to be merged into a single locus in the catalog
+-   **-n**: Distance Between Catalog Loci. In populations there might be monomorphic, or fixed loci in two or more individuals. However, different haplotypes of the same locus could segregate in the population and the parameter -n defines by how many positions they may differ to be merged into a single locus in the catalog.
+
+#### Additional parameters:
+
+-   **-r**: The proportiion of covered indivduals
+
+## (3) Results
+
+Below, I am showing a couple of
