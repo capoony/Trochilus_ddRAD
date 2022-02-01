@@ -19,8 +19,8 @@ for (j in c(0.5,0.75,1.0)){
       filter(Sample==i,
         PropCovLoci==j,
         m %in% c(3,5,7),
-        M %in% c(1,2, 3, 4, 6, 8, 10, 15, 20, 30),
-        n %in% c(1,2, 3, 4, 6, 8, 10, 15, 20, 30))
+        M %in% c(1,3,6,10,12),
+        n %in% c(1,3,6,10,12))
     df1$Poly[df1$Poly==0]<-'Monomorphic'
     df1$Poly[df1$Poly==1]<-'Polymorphic'
     df1$m<-sub('^','Minimum stack depth (-m): ',df1$m)

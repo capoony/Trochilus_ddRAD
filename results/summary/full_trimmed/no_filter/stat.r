@@ -15,8 +15,8 @@ df1<-df %>%
     convert=T)%>%
   filter(PropCovLoci %in% c(0.5,0.75,1.0),
   m %in% c(3,5,7),
-  M %in% c(1,2, 3, 4, 6, 8, 10, 15, 20, 30),
-  n %in% c(1,2, 3, 4, 6, 8, 10, 15, 20, 30))
+  M %in% c(1,3,6,10,12),
+  n %in% c(1,3,6,10,12))
 
 df1$PropCovLoci<-sub('^','Prop. samples (-R): ',df1$PropCovLoci)
 df1$m<-sub('^','Minimum stack depth (-m): ',df1$m)

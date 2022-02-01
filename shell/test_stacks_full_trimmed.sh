@@ -108,45 +108,45 @@ done
 
 ## without SNP and coverage filter
 
-sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses.sh \
+sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses2.sh \
   /media/inter/mkapun/projects/Trochilus_ddRAD/results/full_trimmed \
   /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/full_trimmed/no_filter \
   1 \
   1
 
-sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses.sh \
+sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses2.sh \
   /media/inter/mkapun/projects/Trochilus_ddRAD/results/full_trimmed \
   /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/full_trimmed/snp095 \
   0.95 \
   1
 
 
-sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses.sh \
+sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses2.sh \
   /media/inter/mkapun/projects/Trochilus_ddRAD/results/full_trimmed \
   /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/full_trimmed/snp09 \
   0.9 \
   1
 
-sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses.sh \
+sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses2.sh \
   /media/inter/mkapun/projects/Trochilus_ddRAD/results/full_trimmed \
   /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/full_trimmed/cov095 \
   1 \
   0.95
 
 
-sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses.sh \
+sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses2.sh \
   /media/inter/mkapun/projects/Trochilus_ddRAD/results/full_trimmed \
   /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/full_trimmed/cov09 \
   1 \
   0.9
 
-sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses.sh \
+sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses2.sh \
   /media/inter/mkapun/projects/Trochilus_ddRAD/results/full_trimmed \
   /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/full_trimmed/snp09_cov09 \
   0.9 \
   0.9
 
-sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses.sh \
+sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses2.sh \
   /media/inter/mkapun/projects/Trochilus_ddRAD/results/full_trimmed \
   /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/full_trimmed/snp095_cov095 \
   0.95 \
