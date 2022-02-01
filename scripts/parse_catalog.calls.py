@@ -1,6 +1,8 @@
 import sys
 from collections import defaultdict as d
 from optparse import OptionParser, OptionGroup
+import numpy as np
+
 
 # Author: Martin Kapun
 
@@ -14,6 +16,12 @@ group = OptionGroup(parser, "< put description here >")
 parser.add_option("--input", dest="IN", help="Input file")
 parser.add_option("--name", dest="name", help="Name")
 parser.add_option("--output", dest="OUT", help="Outputfile prefix")
+parser.add_option("--cov", dest="cov",
+                  help="coverage percentile threshold, e.g. 0.9= retain 0-90% coverage percentile",
+                  default=1)
+parser.add_option("--snp", dest="snp",
+                  help="snp count percentile threshold, e.g. 0.9= retain 0-90% snp count percentile",
+                  default=1)
 
 (options, args) = parser.parse_args()
 parser.add_option_group(group)
@@ -54,6 +62,9 @@ def meanstdv(x):
     return mean, std, se
 
 
+SNPS = d(int)
+COV = d(lambda: d(int))
+
 D = d(lambda: d(lambda: d(int)))
 Init = 0
 
@@ -87,8 +98,10 @@ for l in load_data(options.IN):
         # calculate what proportion of the sample are covered for a given Locus
         CV = len(CovDict.keys()) / len(header)
         # print(CV)
-        # store the number of SNPs per locus
+        # store the number of SNPs per locus and number of sampled populations
         D[round(CV, 2)][chr]["SNPs"] = SNPs
+        # store the number of SNPs per locus
+        SNPS[chr] = SNPs
         D[round(CV, 2)][chr]["max"] = MAX
         if len(GT) == 0:
             D[round(CV, 2)][chr]["GT"] = "na"
@@ -101,7 +114,7 @@ for l in load_data(options.IN):
         else:
             Poly = 1
 
-        # store
+        # store the coverage per locus, covered populations and polymorphic or monmorphic loci
         for h in header:
             if h in CovDict:
                 CovFullDict[round(CV, 2)][Poly][h].append(
@@ -126,6 +139,7 @@ for l in load_data(options.IN):
                 continue
             DS = dict(zip(a[8].split(":"), pops[i].split(":")))
             CovDict[header[i]].append(int(DS["DP"]))
+            COV[header[i]][chr] = int(DS["DP"])
             GT.append(DS["GT"])
         SNPs += 1
     else:
@@ -133,6 +147,7 @@ for l in load_data(options.IN):
             if pops[i] == ".":
                 continue
             CovDict[header[i]].append(int(pops[i]))
+            COV[header[i]][chr] = int(pops[i])
 
 D[round(CV, 2)][chr]["SNPs"] = SNPs
 D[round(CV, 2)][chr]["max"] = MAX
@@ -155,13 +170,36 @@ FullGT = []
 FullLoci = 0
 FullPoly = 0
 out1 = open(options.OUT + "_stats.txt", "a")
+
+# calculate percentiles
+
+# SNPs
+SNPval = np.array(list(SNPS.values()))
+SNPth = np.percentile(SNPval, 100 * float(options.snp))
+SNPskip = [k for (k, v) in SNPS.items() if v > SNPth]
+
+# COV
+COVth = d(float)
+COVskip = []
+for k, v in COV.items():
+    COVval = np.array(list(v.values()))
+    COVth[k] = np.percentile(COVval, 100 * float(options.cov))
+    COVskip.extend([x for (x, y) in v.items() if y > COVth[k]])
+COVskip = list(set(COVskip))
+
+# summarize
 for R, V in sorted(D.items(), reverse=True):
-    L = len(V.keys())
+    L = sum([0 if k in COVskip or k in SNPskip else 1 for (k, v) in V.items()])
     SNPdens = []
     SNPCount = []
     GTcount = []
     Poly = 0
     for k, v in sorted(V.items()):
+
+        # Skip loci above the percentiles
+        if k in COVskip or k in SNPskip:
+            continue
+
         # print(v)
         if v["SNPs"] != 0:
             Poly += 1
@@ -174,7 +212,14 @@ for R, V in sorted(D.items(), reverse=True):
     FullGT.extend(GTcount)
     FullLoci += L
     FullPoly += Poly
-    FullPropPoly = round(FullPoly / FullLoci, 2)
+    if FullLoci == 0:
+        FullPropPoly = "na"
+    else:
+        FullPropPoly = round(FullPoly / FullLoci, 2)
+    if L == 0:
+        PropPoly = "na"
+    else:
+        PropPoly = round(Poly / L, 2)
     out1.write(
         "\t".join(
             [
@@ -184,21 +229,21 @@ for R, V in sorted(D.items(), reverse=True):
                     R,
                     L,
                     Poly,
-                    round(Poly / L, 2),
-                    "\t".join([str(round(x, 1))
+                    PropPoly,
+                    "\t".join([str(round(x, 1)) if x != "na" else "na"
                               for x in meanstdv(SNPCount)[:2]]),
-                    "\t".join([str(round(x, 5))
+                    "\t".join([str(round(x, 5)) if x != "na" else "na"
                               for x in meanstdv(SNPdens)[:2]]),
-                    "\t".join([str(round(x, 5))
+                    "\t".join([str(round(x, 5)) if x != "na" else "na"
                               for x in meanstdv(GTcount)[:2]]),
                     FullLoci,
                     FullPoly,
                     FullPropPoly,
-                    "\t".join([str(round(x, 1))
+                    "\t".join([str(round(x, 1)) if x != "na" else "na"
                               for x in meanstdv(FullCount)[:2]]),
-                    "\t".join([str(round(x, 5))
+                    "\t".join([str(round(x, 5)) if x != "na" else "na"
                               for x in meanstdv(FullDens)[:2]]),
-                    "\t".join([str(round(x, 5))
+                    "\t".join([str(round(x, 5)) if x != "na" else "na"
                               for x in meanstdv(FullGT)[:2]]),
                 ]
             ]
@@ -218,7 +263,8 @@ for Prop, v in sorted(CovFullDict.items()):
                         str(Prop),
                         str(Poly),
                         h,
-                        "\t".join([str(round(x, 1)) for x in meanstdv(c)[:2]]),
+                        "\t".join([str(round(x, 1)) if x !=
+                                  "na" else "na" for x in meanstdv(c)[:2]]),
                     ]
                 )
                 + "\n"
