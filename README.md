@@ -13,7 +13,10 @@ We obtained demultiplexed raw reads from **XX** and first quantitatively tested 
 -   [x] **(A) Full range**: 12 samples that range across the whole dataset, i.e. including all outgroups.
 
 -   [x] **(B) Without outgroup**: 12 samples, excluding all outgroups.
+
 -   [x] **(B) Ingroup only**: 12 samples comprised of the most closely related _T. xxx_ individuals only
+
+![samples](images/samples.png)
 
 ## (2) Parameters
 
@@ -21,8 +24,10 @@ We based our analysis on the commonly software Stacks, which allows to identify 
 
 [![StacksCartoon](https://catchenlab.life.illinois.edu/stacks/param_tutorial/catalog.png)](https://catchenlab.life.illinois.edu/stacks/param_tut.php)
 
- One major caveat of this approach is to distinguish true orthologous polymorphisms from false paralogs, which is sensitive to the combination of different filtering parameters. Among those, three major paramaters are deemed to have the greatest impact on the accuracy of ddRAD analyses. 
+ One major caveat of this approach is to distinguish true orthologous polymorphisms from false paralogs, which is sensitive to the combination of different filtering parameters. Among those, three major paramaters are deemed to have the greatest impact on the accuracy of ddRAD analyses, see [here](https://catchenlab.life.illinois.edu/stacks/param_tut.php).
 
 -   **-m**: Minimum stack depth / minimum depth of coverage. The minimum stack depth parameter controls the number of raw reads required to form an initial stack. If the depth of coverage for a particular stack is below this value, then an allele will not be formed
 
 -   **-M**: Distance allowed between stacks. This represents the number of nucleotides that may be different between two stacks in order to merge them. These nucleotide differences may be due to polymorphisms present between two alleles, or they may be due to sequencing error.
+
+-   **-n**: Distance Between Catalog Loci. In populations there might be monomorphic, or fixed loci in two or more individuals. However, different haplotypes of the same locus could segregate in the population and the parameter -n defines by how many positions they may differ to be merged into a single locus in the catalog
