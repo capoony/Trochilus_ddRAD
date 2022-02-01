@@ -1,0 +1,1 @@
+Name	PropCovLoci	NoLoci	Polymorphic	PropPolymorphic	AvSNPCount	SDSNPCount	AvSNPdensity	SDSNPdensity	AvHet	SDHet	CummNoLoci	CummPolymorphic	CummPropPolymorphic	CummAvSNPCount	CummSDSNPCount	CummAvSNPdensity	CummSDSNPdensity	CummAvHet	CummSDHet

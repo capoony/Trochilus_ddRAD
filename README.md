@@ -38,4 +38,4 @@ We based our analysis on the commonly software Stacks, which allows to identify 
 
 ## (3) Results
 
-Below, I am showing a couple of
+Below, I am showing a couple of example plots
