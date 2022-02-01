@@ -17,9 +17,11 @@ We obtained demultiplexed raw reads from **XX** and first quantitatively tested 
 
 ## (2) Parameters
 
-We based our analysis on the commonly software Stacks, which allow to identify SNP variation Three major paramaters are deemed to have the greatest impact on ddRAD analyses. Their influence is depcited in the below figure
+We based our analysis on the commonly software Stacks, which allows to identify SNP variation in ddRAD data from organims without a reference genome. See a cartoon of the workflow below.
 
 [![StacksCartoon](https://catchenlab.life.illinois.edu/stacks/param_tutorial/catalog.png)](https://catchenlab.life.illinois.edu/stacks/param_tut.php)
+
+ One major caveat of this approach is to distinguish true orthologous polymorphisms from false paralogs, which is sensitive to the combination of different filtering parameters. Among those, three major paramaters are deemed to have the greatest impact on the accuracy of ddRAD analyses. 
 
 -   **-m**: Minimum stack depth / minimum depth of coverage. The minimum stack depth parameter controls the number of raw reads required to form an initial stack. If the depth of coverage for a particular stack is below this value, then an allele will not be formed
 
