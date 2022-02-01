@@ -17,6 +17,7 @@ printf "Name\tPropCovLoci\tNoLoci\tPolymorphic\tPropPolymorphic\tAvSNPCount\tSDS
 printf "Name\tPropCovLoci\tPoly\tSample\tAvCov\tSDCov\n" \
   > ${output}_cov.txt
 
+
 ### parallelize the analysis with 200 parallel threads
 PROCS=200
 WAIT=0
@@ -40,12 +41,13 @@ do
 
     do
       [ "$((END-WAIT))" -ge "$PROCS" ] && waitnext
+      echo "processing "${m}_${M}_${n}
       python  /media/inter/mkapun/projects/Trochilus_ddRAD/scripts/parse_catalog.calls.py \
         --input ${input}/test_stacks_${m}_${M}_${n}/catalog.calls \
         --name ${m}_${M}_${n} \
         --cov ${cov} \
         --snp ${snp} \
-        --output ${output}  &
+        --output ${output} &> /dev/null &
       PIDS[$(( (END++) % PROCS ))]=$!
     done
   done

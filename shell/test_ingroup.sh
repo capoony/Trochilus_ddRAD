@@ -104,7 +104,52 @@ do
 done
 #
 #
-# ### now summarize the data
+### now summarize the data
+
+sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses.sh \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/results/ingroup \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/ingroup/no_filter \
+  1 \
+  1
+
+sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses.sh \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/results/ingroup \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/ingroup/snp095 \
+  0.95 \
+  1
+
+
+sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses.sh \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/results/ingroup \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/ingroup/snp09 \
+  0.9 \
+  1
+
+sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses.sh \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/results/ingroup \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/ingroup/cov095 \
+  1 \
+  0.95
+
+
+sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses.sh \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/results/ingroup \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/ingroup/cov09 \
+  1 \
+  0.9
+
+sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses.sh \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/results/ingroup \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/ingroup/snp09_cov09 \
+  0.9 \
+  0.9
+
+sh /media/inter/mkapun/projects/Trochilus_ddRAD/shell/summarize_analyses.sh \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/results/ingroup \
+  /media/inter/mkapun/projects/Trochilus_ddRAD/results/summary/ingroup/snp095_cov095 \
+  0.95 \
+  0.95
+
 
 mkdir /media/inter/mkapun/projects/Trochilus_ddRAD/shell/test/ingroup/
 
