@@ -1,7 +1,5 @@
 data/
-shell/stacks_full/
-shell/stacks_ingroup/
-shell/stacks_ohne/
+shell/stacks_*
 shell/test/
 results/*
 !results/summary/
